@@ -24,9 +24,12 @@ def test_user_edits_car_and_change_survives_reload(page, live_server):
     # 3. 修改型号和年份
     page.get_by_label("Model", exact=True).fill("Accord")
     page.get_by_label("Year", exact=True).fill("2023")
-    page.get_by_role("button", name="Save changes").click()
+    with page.expect_navigation():
+      page.get_by_role("button", name="Save changes").click()
+
 
     # 4. 断言详情页标题
+    expect(page).to_have_url(re.compile(r"/cars/\d+$"))
     expect(page.get_by_role("heading", name="Honda Accord")).to_be_visible()
 
     # 5. 刷新页面
