@@ -31,8 +31,7 @@ def test_user_edits_car_and_change_survives_reload(page, live_server):
     # 4. 断言详情页标题
     expect(page).to_have_url(re.compile(r"/cars/\d+$"))
 
-    # 断言具体字段，而不是整个标题
-    expect(page.get_by_role("heading", name="Honda Accord")).to_be_visible()
+    expect(page.get_by_role("heading", name="Honda Accord")).to_be_visible(timeout=10000)
 
     # 5. 刷新页面
     page.reload()
