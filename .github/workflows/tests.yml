@@ -4,8 +4,6 @@ name: Cars CRUD Tests
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 
 permissions:
   contents: read
@@ -45,42 +43,3 @@ jobs:
 
       - name: Run E2E tests
         run: python -m pytest tests/e2e -q
-
-  publish:
-    # 依赖 tests 任务：只有当 tests 全部成功通过后，才会执行这个 publish 任务
-    needs: tests
-    
-    # 运行条件：只有当事件是 push（推送到 main）时，才执行发布
-    # 这样可以保证 PR 阶段绝不使用 Docker Hub 的凭证，保护安全
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    # 运行环境：使用 GitHub 托管的 Ubuntu 最新版虚拟机
-    runs-on: ubuntu-latest
-    
-    steps:
-      # 第一步：拉取仓库代码，使得后续的 Dockerfile 和 app/ 代码能被构建使用
-      - uses: actions/checkout@v7
-
-      # 第二步：初始化 Docker Buildx，它是构建和推送镜像的高效工具
-      - uses: docker/setup-buildx-action@v4
-
-      # 第三步：登录 Docker Hub
-      # 凭证从 GitHub 仓库的 Secrets 中读取，绝不要直接把用户名或 token 写在代码里
-      - uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # 第四步：构建并推送 Docker 镜像
-      - uses: docker/build-push-action@v7
-        with:
-          # 设置构建上下文为当前仓库根目录（Dockerfile 所在的位置）
-          context: .
-          # 设置为 true，表示构建成功后直接推送到 Docker Hub
-          push: true
-          # 为镜像打上两个标签：
-          # 1. latest：让用户默认拉取最新版本
-          # 2. ${{ github.sha }}：加上这次提交的 Git commit SHA，方便追溯具体是哪个 commit 发布的镜像
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/cars-crud:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/cars-crud:${{ github.sha }}
